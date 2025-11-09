@@ -6,6 +6,10 @@ let config = {
         templateId: '',
         publicKey: ''
     },
+    emailTemplate: {
+        subject: 'Новый запрос с сайта',
+        body: 'Имя: {name}\nEmail: {email}\nТелефон: {phone}\nКартина: {artwork}\nСообщение: {message}'
+    },
     telegram: {
         enabled: false,
         botToken: '',
@@ -99,8 +103,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Формируем текст сообщения
-        const messageText = `
+        // Формируем текст письма из шаблона в config.js
+        const emailBody = config.emailTemplate.body
+            .replace(/{name}/g, formData.name)
+            .replace(/{email}/g, formData.email)
+            .replace(/{phone}/g, formData.phone || 'не указан')
+            .replace(/{artwork}/g, artworkInfo)
+            .replace(/{message}/g, formData.message);
+
+        // Формируем текст для Telegram (с эмодзи)
+        const telegramText = `
 🎨 Новый запрос с сайта Вячеслава Пешкина
 
 👤 Имя: ${formData.name}
@@ -124,10 +136,11 @@ ${formData.message}
                         {
                             from_name: formData.name,
                             from_email: formData.email,
-                            phone: formData.phone,
+                            phone: formData.phone || 'не указан',
                             artwork: artworkInfo,
                             message: formData.message,
-                            full_message: messageText
+                            email_body: emailBody,
+                            subject: config.emailTemplate.subject
                         },
                         config.emailjs.publicKey
                     );
@@ -150,7 +163,7 @@ ${formData.message}
                         },
                         body: JSON.stringify({
                             chat_id: config.telegram.chatId,
-                            text: messageText,
+                            text: telegramText,
                             parse_mode: 'HTML'
                         })
                     });

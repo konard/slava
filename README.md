@@ -54,40 +54,97 @@ slava/
 
 ### 2. Настройка уведомлений
 
-#### Email уведомления (EmailJS)
+#### Email уведомления (EmailJS + Яндекс SMTP)
+
+##### Шаг 1: Настройка пароля приложения в Яндекс.Почте
+
+1. Войдите в свою [Яндекс.Почту](https://mail.yandex.ru/)
+2. Перейдите в **Настройки** → **Все настройки** → **Почтовые программы**
+3. Включите опцию **"С почтового клиента, получая почту с сервера imap.yandex.ru по протоколу IMAP"**
+4. Для безопасности выберите метод авторизации **"Пароли приложений и OAuth-токены"**
+5. Прокрутите вниз и нажмите **"Создать пароль приложения"**
+6. Введите название (например, "EmailJS для сайта") и нажмите **"Создать"**
+7. **Сохраните полученный пароль** - он понадобится для настройки EmailJS
+
+##### Шаг 2: Регистрация и настройка EmailJS
 
 1. Зарегистрируйтесь на [EmailJS](https://www.emailjs.com/)
-2. Создайте Email Service (например, Gmail)
-3. Создайте Email Template со следующими переменными:
-   - `{{from_name}}` - имя отправителя
-   - `{{from_email}}` - email отправителя
-   - `{{phone}}` - телефон
-   - `{{artwork}}` - название картины
-   - `{{message}}` - сообщение
-   - `{{full_message}}` - полное форматированное сообщение
 
-4. Получите ваш Public Key в разделе Account
+2. Создайте Email Service:
+   - Нажмите **"Add New Service"**
+   - Выберите **"Custom SMTP Server"** (или "Other")
+   - Заполните параметры:
+     - **SMTP Server**: `smtp.yandex.ru`
+     - **Port**: `465` (SSL) или `587` (TLS)
+     - **Username**: ваш полный email на Яндексе (например, `example@yandex.ru`)
+     - **Password**: пароль приложения, созданный на Шаге 1
+     - **From Email**: ваш email на Яндексе
+     - **From Name**: Вячеслав Пешкин (или другое имя отправителя)
+   - Нажмите **"Create Service"** и сохраните **Service ID**
 
-5. Создайте файл `js/config.js` из шаблона:
+3. Создайте Email Template:
+   - Нажмите **"Create New Template"**
+   - Настройте шаблон:
+     - **To Email**: email, на который будут приходить уведомления
+     - **Subject**: `{{subject}}` (тема письма берется из config.js)
+     - **Content**: просто вставьте переменную `{{email_body}}` (тело письма формируется из шаблона в config.js)
+   - Можете добавить оформление HTML, если нужно, но основной текст должен быть `{{email_body}}`
+   - Сохраните шаблон и скопируйте **Template ID**
+
+4. Получите Public Key:
+   - Перейдите в **Account** → **General**
+   - Скопируйте ваш **Public Key**
+
+##### Шаг 3: Настройка конфигурации сайта
+
+1. Создайте файл `js/config.js` из шаблона:
    ```bash
    cp js/config.template.js js/config.js
    ```
 
-6. Заполните данные EmailJS в `js/config.js`:
+2. Откройте `js/config.js` и заполните данные EmailJS:
    ```javascript
    emailjs: {
        enabled: true,
-       serviceId: 'YOUR_SERVICE_ID',
-       templateId: 'YOUR_TEMPLATE_ID',
-       publicKey: 'YOUR_PUBLIC_KEY'
+       serviceId: 'YOUR_SERVICE_ID', // из Шага 2
+       templateId: 'YOUR_TEMPLATE_ID', // из Шага 2
+       publicKey: 'YOUR_PUBLIC_KEY' // из Шага 2
    }
    ```
 
-7. Подключите библиотеку EmailJS в `contact.html` (добавьте перед закрывающим тегом `</body>`):
+3. Настройте шаблон письма (по желанию):
+   ```javascript
+   emailTemplate: {
+       subject: 'Новый запрос с сайта Вячеслава Пешкина',
+       body: `Здравствуйте!
+
+   Получен новый запрос с сайта.
+
+   --- Данные отправителя ---
+   Имя: {name}
+   Email: {email}
+   Телефон: {phone}
+
+   --- Интересующая картина ---
+   {artwork}
+
+   --- Сообщение ---
+   {message}
+
+   ---
+   Это письмо отправлено автоматически с сайта.`
+   }
+   ```
+
+   Вы можете изменить текст шаблона по своему желанию. Доступные переменные: `{name}`, `{email}`, `{phone}`, `{artwork}`, `{message}`
+
+4. Подключите библиотеку EmailJS в `contact.html`:
+   - Раскомментируйте строки в конце файла (строки 99-100):
    ```html
    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
    <script>emailjs.init('YOUR_PUBLIC_KEY');</script>
    ```
+   - Замените `YOUR_PUBLIC_KEY` на ваш Public Key из Шага 2
 
 #### Telegram уведомления
 
